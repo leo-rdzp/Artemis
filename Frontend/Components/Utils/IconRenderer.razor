@@ -1,0 +1,88 @@
+﻿@using System.Text.RegularExpressions
+
+<span class="@WrapperClass" style="@StyleString">
+    @if (IsValidIconFormat(Icon))
+    {
+        @switch (GetIconType(Icon))
+        {
+            case "fas":
+                <i class="@($"fas fa-{GetIconName(Icon)}")" style="@IconStyle" aria-hidden="true"></i>
+                break;
+            case "far":
+                <i class="@($"far fa-{GetIconName(Icon)}")" style="@IconStyle" aria-hidden="true"></i>
+                break;
+            case "fab":
+                <i class="@($"fab fa-{GetIconName(Icon)}")" style="@IconStyle" aria-hidden="true"></i>
+                break;
+            case "mat":
+                <span class="material-icons" style="@IconStyle">@GetIconName(Icon)</span>
+                break;
+            case "custom":
+                <img src="@GetIconName(Icon)" alt="icon" class="custom-icon" style="@IconStyle" />
+                break;
+            default:
+                <i class="fas fa-question" style="@IconStyle" aria-hidden="true"></i>
+                break;
+        }
+    }
+</span>
+
+@code {
+    [Parameter] public required string Icon { get; set; }
+    [Parameter] public string? Size { get; set; }
+    [Parameter] public string? Color { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    private string WrapperClass => $"icon-wrapper {Class}".Trim();
+
+    private string StyleString
+    {
+        get
+        {
+            var styles = new List<string>();
+
+            if (!string.IsNullOrEmpty(Size))
+                styles.Add($"font-size: {Size}");
+
+            if (!string.IsNullOrEmpty(Color))
+                styles.Add($"color: {Color}");
+
+            return string.Join(";", styles);
+        }
+    }
+
+    private string IconStyle
+    {
+        get
+        {
+            var styles = new List<string>();
+
+            if (GetIconType(Icon) == "custom")
+            {
+                if (!string.IsNullOrEmpty(Size))
+                {
+                    styles.Add($"width: {Size}");
+                    styles.Add($"height: {Size}");
+                }
+            }
+
+            return string.Join(";", styles);
+        }
+    }
+
+    private bool IsValidIconFormat(string? icon)
+    {
+        if (string.IsNullOrEmpty(icon)) return false;
+        return Regex.IsMatch(icon, @"^(fas|far|fab|mat|custom):.+$");
+    }
+
+    private string GetIconType(string icon)
+    {
+        return icon.Split(':')[0];
+    }
+
+    private string GetIconName(string icon)
+    {
+        return icon.Split(':')[1];
+    }
+}

@@ -1,0 +1,86 @@
+﻿@page "/login"
+@using Microsoft.AspNetCore.Components.Forms
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Components.Authorization
+@inherits LoginPage
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager NavigationManager
+
+<div class="login-page">
+    <AuthorizeView Context="auth">
+        <Authorized>
+            @{
+                var returnUrl = string.IsNullOrEmpty(ReturnUrl) ? "/" : ReturnUrl;
+                NavigationManager.NavigateTo(returnUrl);
+            }
+        </Authorized>
+        <NotAuthorized>
+            <div class="login-container">
+                <div class="login-card">
+                    <div class="login-header">
+                        <h2>Welcome to Artemis</h2>
+                        <p>Please sign in to continue</p>
+                    </div>
+
+                    <div class="login-body">
+                        <EditForm Model="@LoginModel" OnValidSubmit="HandleLogin" class="login-form" FormName="loginForm">
+                            <DataAnnotationsValidator />
+
+                            <div class="form-group">
+                                <label>Username</label>
+                                <div class="input-with-icon">
+                                    <span class="icon user-icon">
+                                        <svg viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                                        </svg>
+                                    </span>
+                                    <InputText @bind-Value="LoginModel.UserName" class="form-input" />
+                                </div>
+                                <ValidationMessage For="@(() => LoginModel.UserName)" class="validation-message" />
+                            </div>
+
+                            <div class="form-group">
+                                <label>Password</label>
+                                <div class="input-with-icon">
+                                    <span class="icon lock-icon">
+                                        <svg viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+                                        </svg>
+                                    </span>
+                                    <InputText type="password" @bind-Value="LoginModel.Password" class="form-input" />
+                                </div>
+                                <ValidationMessage For="@(() => LoginModel.Password)" class="validation-message" />
+                            </div>
+
+                            <div class="form-actions">
+                                <div class="remember-me">
+                                    <InputCheckbox @bind-Value="LoginModel.RememberMe" id="remember-me" class="checkbox" />
+                                    <label for="remember-me">Remember me</label>
+                                </div>
+                                <a href="forgot-password" class="forgot-password">Forgot password?</a>
+                            </div>
+
+                            <button type="submit" class="submit-button" disabled="@IsLoading">
+                                @if (IsLoading)
+                                {
+                                    <div class="loading-state">
+                                        <div class="spinner"></div>
+                                        <span>Signing in...</span>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span>Sign in</span>
+                                }
+                            </button>
+                        </EditForm>
+
+                        <div class="footer">
+                            <span>© @DateTime.Now.Year Artemis. All rights reserved.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </NotAuthorized>
+    </AuthorizeView>
+</div>

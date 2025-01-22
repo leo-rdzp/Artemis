@@ -1,0 +1,61 @@
+﻿@using Artemis.Frontend.Components
+@using Microsoft.AspNetCore.Components.Authorization
+@using Artemis.Frontend.Components.Shared
+@using Artemis.Frontend.Services.Navigation
+
+@inject Microsoft.Extensions.Logging.ILogger<Router> Logger
+@inject NavigationManager NavigationManager
+
+<Router AppAssembly="typeof(Program).Assembly">
+    <Found Context="routeData">
+        <ErrorBoundary>
+            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="typeof(Layout.MainLayout)">
+                <Authorizing>
+                    @{
+                        Logger.LogInformation("Authorizing access to route: {Route}",
+                        routeData.PageType?.FullName ?? "Unknown");
+                    }
+                    <p>Authorizing...</p>
+                </Authorizing>
+                <NotAuthorized>
+                    <LayoutView Layout="typeof(Layout.MainLayout)">
+                        @{
+                            var currentUri = new Uri(NavigationManager.Uri);
+                            var baseUri = new Uri(NavigationManager.BaseUri);
+                            var path = baseUri.MakeRelativeUri(currentUri).ToString();
+
+                            Logger.LogInformation("NotAuthorized - Path: {Path}", path);
+                        }
+                        @if (!path.StartsWith("login", StringComparison.OrdinalIgnoreCase))
+                        {
+                            <RedirectToLogin />
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning" role="alert">
+                                <h4 class="alert-heading">Access Denied</h4>
+                                <p>You are not authorized to access this resource.</p>
+                            </div>
+                        }
+                    </LayoutView>
+                </NotAuthorized>
+            </AuthorizeRouteView>
+        </ErrorBoundary>
+    </Found>
+    <NotFound>
+        <LayoutView Layout="typeof(Layout.MainLayout)">
+            @{
+                Logger.LogWarning("Route not found: {Path}",
+                NavigationManager.ToBaseRelativePath(NavigationManager.Uri));
+            }
+            <div class="alert alert-danger" role="alert">
+                <h4 class="alert-heading">Page Not Found</h4>
+                <p>Sorry, there's nothing at this address.</p>
+                <hr>
+                <p class="mb-0">
+                    <a href="/" class="btn btn-outline-danger">Return to Home</a>
+                </p>
+            </div>
+        </LayoutView>
+    </NotFound>
+</Router>

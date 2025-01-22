@@ -1,0 +1,26 @@
+﻿.table {
+    font-size: 0.875rem;
+}
+
+    .table th {
+        padding: 0.5rem;
+        background-color: #f8f9fa;
+    }
+
+    .table td {
+        padding: 0.5rem;
+        vertical-align: middle;
+    }
+
+    .table .btn-link {
+        min-width: 24px;
+        height: 24px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+.app-icon {
+    width: 16px;
+    height: 16px;
+}

@@ -1,0 +1,25 @@
+﻿@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ILogger<RedirectToLogin> Logger
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var isAuthenticated = authState.User.Identity?.IsAuthenticated ?? false;
+
+        Logger.LogInformation("RedirectToLogin - IsAuthenticated: {IsAuthenticated}", isAuthenticated);
+
+        if (isAuthenticated)
+        {
+            Logger.LogInformation("User is authenticated, not redirecting");
+            return;
+        }
+
+        var uri = new Uri(NavigationManager.Uri);
+        var returnUrl = Uri.EscapeDataString(NavigationManager.ToBaseRelativePath(NavigationManager.Uri));
+
+        Logger.LogInformation("Redirecting to login with returnUrl: {ReturnUrl}", returnUrl);
+        NavigationManager.NavigateTo($"/login?returnUrl={returnUrl}", false);
+    }
+}

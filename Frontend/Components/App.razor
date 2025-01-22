@@ -1,0 +1,58 @@
+﻿@using Artemis.Frontend.Components.Error
+@using Microsoft.AspNetCore.Components.Web
+@using static Microsoft.AspNetCore.Components.Web.RenderMode
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    <link rel="stylesheet" href="bootstrap/bootstrap.min.css" />
+    <link rel="stylesheet" href="app.css" />
+    <link rel="stylesheet" href="Artemis.styles.css" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <HeadOutlet />
+</head>
+<body>
+    <div>
+        <CascadingAuthenticationState>
+            <ErrorBoundary>
+                <Routes @rendermode="InteractiveServer"/>
+            </ErrorBoundary>
+        </CascadingAuthenticationState>
+    </div>
+    <NotificationContainer />
+    <script src="_framework/blazor.web.js"></script>
+    <script>
+        window.localStorageInterop = {
+            setItem: async function (key, value) {
+                try {
+                    localStorage.setItem(key, value);
+                    return true;
+                } catch (e) {
+                    console.error('localStorage.set error:', e);
+                    return false;
+                }
+            },
+            getItem: function (key) {
+                try {
+                    return localStorage.getItem(key);
+                } catch (e) {
+                    console.error('localStorage.get error:', e);
+                    return null;
+                }
+            },
+            removeItem: function (key) {
+                try {
+                    localStorage.removeItem(key);
+                    return true;
+                } catch (e) {
+                    console.error('localStorage.remove error:', e);
+                    return false;
+                }
+            }
+        };
+    </script>
+</body>
+</html>

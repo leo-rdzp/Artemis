@@ -1,0 +1,194 @@
+﻿@page "/users"
+@using Artemis.Frontend.Models.Share
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Web
+@using Artemis.Frontend.Components.Shared
+@using Artemis.Frontend.Models.Setup
+@using Artemis.Frontend.Models.Table
+@using Artemis.Frontend.Services.Users
+@using Artemis.Frontend.Services.Notification
+@inject NotificationService NotificationService
+@inject IUserService UserService
+
+<div class="container-fluid">
+    <h3>Users Management</h3>
+    
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>Users List</span>
+            <button class="btn btn-submit" type="button" @onclick="() => ShowCreateForm()">New User</button>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <input type="text" class="form-control" placeholder="Search users..." @bind="searchTerm" @bind:event="oninput" @onkeyup="HandleSearch" />
+            </div>
+            
+            <DynamicTable Data="@users" 
+                          Columns="@columns"
+                          DeletedStatus="Deleted"
+                          OnEdit="@(EventCallback.Factory.Create<UserDTO>(this, HandleEdit))"
+                          OnDelete="@(EventCallback.Factory.Create<UserDTO>(this, HandleDelete))" />
+        </div>
+    </div>    
+
+    <div class="modal fade @(showForm ? "show d-block" : "d-none")" tabindex="-1">
+        <div class="modal-dialog modal-md">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@Title</h5>
+                    <button type="button" class="btn-close" @onclick="OnCancel"></button>
+                </div>
+                <div class="modal-body">
+                    <DynamicForm TModel="UserDTO"
+                                 Model="@currentUser"
+                                 OnSubmit="HandleSubmit"
+                                 OnCancel="() => showForm = false"
+                                 AllowedProperties="@allowedFields"
+                                 SelectOptions="@selectOptions" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (showForm)
+    {
+        <div class="modal-backdrop fade show"></div>
+    }
+
+</div>
+
+@code {
+    private string Title = "Edit User";
+    private List<UserDTO> users = new();
+    private UserDTO currentUser = new();
+    private bool showForm;
+    private string searchTerm = "";
+    private List<ColumnDefinition> columns = new()
+    {
+        new() { Field = "UserName", Title = "Username" },
+        new() { Field = "Person.FirstName", Title = "First Name" },
+        new() { Field = "Person.LastName", Title = "Last Name" },
+        new() { Field = "Person.Email", Title = "Email" },
+        new() { Field = "Person.Phone", Title = "Phone" },
+        new() { Field = "Status", Title = "Status" },
+        new() { Field = "LastLoginDate", Title = "Last Login" },
+        new() { Field = "Type", Title = "Type" }
+    };
+
+    private string[] allowedFields = new[]
+    {
+        "UserName",
+        "Password",
+        "Status",
+        "Type",
+        "Person.FirstName",
+        "Person.LastName",
+        "Person.Email",
+        "Person.Phone"
+    };
+
+    private Dictionary<string, List<SelectOption>> selectOptions = new()
+    {
+       ["Status"] = new()
+       {
+           new() { Value = "Active", Text = "Active" },
+           new() { Value = "Inactive", Text = "Inactive" },
+           new() { Value = "Suspended", Text = "Suspended" },
+           new() { Value = "Locked", Text = "Locked" }
+       },
+       ["Type"] = new()
+       {
+           new() { Value = "Internal", Text = "Internal" },
+           new() { Value = "External", Text = "External" }
+       }
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsers();
+    }
+
+    private async Task LoadUsers()
+    {
+        var response = await UserService.GetUsers();
+        users = response.ToList();
+    }
+
+    private void ShowCreateForm()
+    {
+        try
+        {
+            currentUser = new UserDTO
+                {
+                    Person = new PersonDTO(),
+                    Status = "Active" // Set default status
+                };
+            Title = "Add User";
+            showForm = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            // Add error logging 
+            Console.WriteLine($"Error showing form: {ex}");
+        }
+    }
+
+    private void OnCancel()
+    {
+        showForm = false;
+        StateHasChanged();
+    }
+
+    private async Task HandleSubmit(UserDTO user)
+    {
+        try
+        {
+            if (user.Id == 0)
+            {
+                await UserService.Create(user);
+            }
+            else
+            {
+                await UserService.Update(user);
+            }
+            showForm = false;
+            await LoadUsers();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.ShowError($"Error saving user: {ex.Message}");
+        }
+    }
+
+    private void HandleEdit(UserDTO user)
+    {
+        currentUser = user;
+        showForm = true;
+        StateHasChanged();
+    }
+
+    private async Task HandleDelete(UserDTO user)
+    {
+        await UserService.Delete(user.Id);
+        await LoadUsers();
+    }
+
+    private async Task HandleSearch()
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            await LoadUsers();
+        }
+        else
+        {
+            users = users.Where(u =>
+                u.UserName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                u.Person.Email?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) == true ||
+                u.Person.FirstName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                u.Person.LastName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)
+            ).ToList();
+        }
+    }
+}

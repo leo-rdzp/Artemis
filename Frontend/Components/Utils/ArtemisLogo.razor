@@ -1,0 +1,52 @@
+﻿@namespace Artemis.Frontend.Components.Utils
+
+<div class="@($"logo-container {Class}")" style="transform: translate(400px, 200px);">
+    <svg width="600" height="600" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <filter id="shadow">
+                <feDropShadow dx="2" dy="2" stdDeviation="3" flood-color="white" />
+            </filter>        
+        </defs>
+
+        <path d="M300 30 L540 150 L540 360 C540 480 420 570 300 570 C180 570 60 480 60 360 L60 150 Z"
+              fill="none"
+              stroke="#f3f4f6"
+              stroke-width="6"
+              filter="url(#shadow)" />
+
+        <circle cx="300" cy="300" r="150"
+                fill="none"
+                stroke="#f3f4f6"
+                stroke-width="6"
+                filter="url(#shadow)" />
+
+        <path d="M300 150 V450 M150 300 H450"
+              stroke="#f3f4f6"
+              stroke-width="6"
+              filter="url(#shadow)" />
+
+        <text x="300" y="520"
+              text-anchor="middle"
+              font-family="Cinzel, serif"
+              font-weight="600"
+              font-size="72"
+              letter-spacing="0.1em"
+              fill="#f3f4f6"
+              filter="url(#shadow)">
+            ARTEMIS
+        </text>
+    </svg>
+</div>
+
+<style>
+    .logo-container {
+        position: relative;
+        width: fit-content;
+        height: fit-content;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public string Class { get; set; } = string.Empty;
+}

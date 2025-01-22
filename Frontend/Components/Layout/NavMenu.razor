@@ -1,0 +1,163 @@
+﻿@using Artemis.Frontend.Models.Navigation
+@using Artemis.Frontend.Services.Navigation
+@inject INavigationService NavigationService
+@inject MenuStateService MenuState
+@inject IJSRuntime JSRuntime
+@implements IDisposable
+
+<div class="@($"nav-sidebar {(MenuState.IsExpanded ? "expanded" : "collapsed")}")">
+    <div class="nav-header">
+        <div class="logo-container">
+            <svg class="logo-icon" viewBox="0 0 24 24">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
+                      fill="none" stroke="currentColor" stroke-width="2" />
+            </svg>
+            @if (MenuState.IsExpanded)
+            {
+                <span class="logo-text">Artemis</span>
+            }
+        </div>
+        <button class="toggle-button" @onclick="ToggleSidebar">
+            <svg class="group-icon" viewBox="0 0 24 24">
+                <path d="@(MenuState.IsExpanded ? "M15 19l-7-7 7-7" : "M9 19l7-7-7-7")"
+                      fill="none" stroke="currentColor" stroke-width="2" />
+            </svg>
+        </button>
+    </div>
+
+    <div class="nav-content">
+        <AuthorizeView>
+            <Authorized>
+                @foreach (var group in MenuState.MenuGroups)
+                {
+                    <div class="nav-section">
+                        @if (MenuState.IsExpanded)
+                        {
+                            <div class="section-header">
+                                @GetGroupIcon(group.Name)
+                                @(group.Name)
+                            </div>
+                        }
+                        <div class="nav-items">
+                            @if (group.Applications != null)
+                            {
+                                @foreach (var app in group.Applications)
+                                {
+                                    <NavLink class="@GetNavItemClass()"
+                                             href="@app.Route"
+                                             Match="NavLinkMatch.All"
+                                             @onclick="() => OnApplicationSelected(app)">
+                                        @GetApplicationIcon(app)
+                                        @if (MenuState.IsExpanded)
+                                        {
+                                            <span class="item-text">@app.Title</span>
+                                        }
+                                    </NavLink>
+                                }
+                            }
+                        </div>
+                    </div>
+                }
+            </Authorized>
+        </AuthorizeView>
+    </div>
+</div>
+
+@code {
+
+    [Parameter]
+    public EventCallback<Application> OnAppSelected { get; set; }
+
+    protected override void OnInitialized()
+    {
+        MenuState.OnChange += StateHasChanged;
+    }
+
+    private void ToggleSidebar()
+    {
+        MenuState.ToggleSidebar();
+    }
+
+    private string GetNavItemClass()
+    {
+        return MenuState.IsExpanded ? "nav-item" : "nav-item collapsed";
+    }
+
+    private async Task OnApplicationSelected(Application app)
+    {
+        MenuState.ToggleSidebar(); // Collapse sidebar
+        await OnAppSelected.InvokeAsync(app);
+    }
+
+    private RenderFragment GetGroupIcon(string groupName) => builder =>
+    {
+        builder.OpenElement(0, "svg");
+        builder.AddAttribute(1, "class", "app-icon");
+        builder.AddAttribute(2, "viewBox", "0 0 24 24");
+        builder.AddAttribute(3, "style", "height: 24px; padding: 0 3px 3px 0;");
+
+        switch (groupName.ToLower())
+        {
+            case "admin":
+                builder.AddMarkupContent(3, @"
+                    <path d=""M16 8a4 4 0 11-8 0 4 4 0 018 0zm-4 7a10 10 0 00-10 10h20a10 10 0 00-10-10z""
+                        fill=""none"" stroke=""currentColor"" stroke-width=""2"" />");
+                break;
+            case "user":
+                builder.AddMarkupContent(3, @"
+                    <path d=""M12 4a4 4 0 0 1 4 4 4 4 0 0 1-4 4 4 4 0 0 1-4-4 4 4 0 0 1 4-4m0 10c4.42 0 8 1.79 8 4v2H4v-2c0-2.21 3.58-4 8-4z""
+                        fill=""none"" stroke=""currentColor"" stroke-width=""2"" />");
+                break;
+            case "report":
+                builder.AddMarkupContent(3, @"
+                    <path d=""M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 2l5 5h-5V4zM6 20V4h5v7h7v9H6z""
+                        fill=""none"" stroke=""currentColor"" stroke-width=""2"" />");
+                break;
+            case "setup":
+                builder.AddMarkupContent(3, @"
+                    <path d=""M12 15a3 3 0 1 1 0-6 3 3 0 0 1 0 6z""
+                        fill=""none"" stroke=""currentColor"" stroke-width=""2"" />
+                    <path d=""M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852.997 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z""
+                        fill=""none"" stroke=""currentColor"" stroke-width=""2"" />");
+                break;
+            case "process":
+               builder.AddMarkupContent(3, @"
+                   <path d=""M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10""
+                        fill=""none"" stroke=""currentColor"" stroke-width=""2"" />");
+               break;
+            default:
+                builder.AddMarkupContent(3, @"
+                    <path d=""M4 6h16M4 12h16M4 18h16""
+                          fill=""none"" stroke=""currentColor"" stroke-width=""2"" />");
+                break;
+        }
+
+        builder.CloseElement();
+    };
+
+    private RenderFragment GetApplicationIcon(Application app) => builder =>
+    {
+        builder.OpenElement(0, "svg");
+        builder.AddAttribute(1, "class", "app-icon");
+        builder.AddAttribute(2, "viewBox", "0 0 24 24");
+        builder.AddAttribute(3, "style", "width: 24px; padding-right: 5px; padding-bottom: 3px;");
+
+        var iconPath = app.Properties?
+            .FirstOrDefault(p => p.Tag?.ToUpper() == "ICON")?.Value ?? 
+            "M4 6h16M4 12h16M4 18h16"; // Default icon if none found
+
+        // Split multiple paths by |
+        var paths = iconPath.Split('|');
+        foreach (var path in paths)
+        {
+            builder.AddMarkupContent(3, $@"<path d=""{path}"" fill=""none"" stroke=""currentColor"" stroke-width=""2""/>");
+        }
+
+        builder.CloseElement();
+    };    
+
+    public void Dispose()
+    {
+        MenuState.OnChange -= StateHasChanged;
+    }
+}

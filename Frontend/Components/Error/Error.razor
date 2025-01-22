@@ -1,0 +1,104 @@
+﻿@using System.Diagnostics
+@using Artemis.Frontend.Services.Notification
+@using Microsoft.AspNetCore.Components.Web
+@inject ILogger<Error> Logger
+@inject NavigationManager NavigationManager
+@inject ErrorService ErrorService
+
+<PageTitle>Error</PageTitle>
+
+<div class="min-h-screen flex items-center justify-center bg-pattern">
+    <div class="w-full max-w-2xl p-4">
+        <div class="bg-white rounded-lg shadow-xl p-8">
+            <div class="text-center mb-6">
+                <div class="inline-block p-3 bg-[var(--red-primary)] bg-opacity-10 rounded-full mb-4">
+                    <svg class="w-8 h-8 text-[var(--red-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 48px;">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </div>
+                <h1 class="text-3xl font-bold text-[var(--gray-900)] mb-2">System Error</h1>
+                <p class="text-[var(--gray-600)]">An error occurred while processing your request.</p>
+            </div>
+
+            @if (!string.IsNullOrEmpty(ErrorService.LastError))
+            {
+                <div class="bg-[var(--red-primary)] bg-opacity-10 border-l-4 border-[var(--red-primary)] p-4 mb-6 rounded">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-[var(--red-primary)]" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd"
+                                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                                      clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-[var(--red-secondary)]">@ErrorService.LastError</h3>
+                            @if (ErrorService.LastException != null)
+                            {
+                                <div class="mt-2 text-sm text-[var(--red-secondary)]">
+                                    <p>@ErrorService.LastException.Message</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @if (ShowRequestId)
+            {
+                <div class="text-sm text-[var(--gray-600)] mb-6">
+                    <strong>Request ID:</strong> <code class="px-2 py-1 bg-[var(--gray-100)] rounded">@RequestId</code>
+                </div>
+            }
+
+            <div class="flex items-center justify-center space-x-4">
+                <button @onclick="NavigateHome"
+                        class="btn-submit flex items-center space-x-2 px-4 py-2 text-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 48px;">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                    <span>Return Home</span>
+                </button>
+                <button @onclick="ReloadPage"
+                        class="btn-option flex items-center space-x-2 px-4 py-2 text-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 48px;">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    <span>Try Again</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    private string? RequestId { get; set; }
+    private bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
+
+    protected override void OnInitialized()
+    {
+        RequestId = Activity.Current?.Id ?? HttpContext?.TraceIdentifier;
+
+        if (ErrorService.LastException != null)
+        {
+            Logger.LogError(ErrorService.LastException, "Error Page Displayed: {ErrorMessage}",
+                ErrorService.LastError);
+        }
+    }
+
+    private void NavigateHome()
+    {
+        NavigationManager.NavigateTo("/");
+    }
+
+    private void ReloadPage()
+    {
+        NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
+    }
+}

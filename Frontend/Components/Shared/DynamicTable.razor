@@ -1,0 +1,58 @@
+﻿@using Artemis.Frontend.Models.Table
+@typeparam TItem
+
+<table class="table table-hover table-sm">
+    <thead>
+        <tr>
+            @foreach (var column in Columns)
+            {
+                <th>@column.Title</th>
+            }
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Data.Where(i => GetValue(i, "Status")?.ToString() != DeletedStatus))
+        {
+            <tr>
+                @foreach (var column in Columns)
+                {
+                    <td>@GetValue(item, column.Field)</td>
+                }
+                <td>
+                    <button class="btn btn-link p-0 me-2" @onclick="() => OnEdit.InvokeAsync(item)" title="Edit">
+                        <svg class="app-icon" viewBox="0 0 24 24" style="width: 18px; height: 18px; color: #ffc107;">
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </button>
+                    <button class="btn btn-link p-0" @onclick="() => OnDelete.InvokeAsync(item)" title="Delete">
+                        <svg class="app-icon" viewBox="0 0 24 24" style="width: 18px; height: 18px; color: #dc3545;">
+                            <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    [Parameter] public IEnumerable<TItem> Data { get; set; } = [];
+    [Parameter] public List<ColumnDefinition> Columns { get; set; } = [];
+    [Parameter] public EventCallback<TItem> OnEdit { get; set; }
+    [Parameter] public EventCallback<TItem> OnDelete { get; set; }
+    [Parameter] public string DeletedStatus { get; set; } = "Deleted";
+
+    private object? GetValue(TItem item, string field)
+    {
+        var properties = field.Split('.');
+        object? value = item;
+
+        foreach (var prop in properties)
+        {
+            value = value?.GetType().GetProperty(prop)?.GetValue(value);
+        }
+
+        return value;
+    }
+}

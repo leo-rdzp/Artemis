@@ -1,0 +1,77 @@
+﻿@page "/"
+
+@using Artemis.Frontend.Components.Utils
+@using Artemis.Frontend.Models.Navigation
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Routing
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager NavigationManager
+
+@attribute [Authorize]
+
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-white relative flex items-center justify-center">
+    <!-- Watermark Background with Logo -->
+    <div class="fixed inset-0 flex items-center justify-center pointer-events-none">
+        <div class="absolute flex flex-col items-center opacity-[0.03] select-none">
+            <div class="fixed inset-0 flex items-center justify-center pointer-events-none">
+                <ArtemisLogo />
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="h-screen w-full">
+        <AuthorizeView>
+            <Authorized>
+                @if (_isLoading)
+                {
+                    <div class="flex justify-center items-center h-full">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                    </div>
+                }
+                else if (CurrentApplication != null)
+                {
+                    <iframe src="@CurrentApplication.Route"
+                            class="w-full h-full border-none"
+                            title="@CurrentApplication.Title">
+                    </iframe>
+                }
+            </Authorized>
+            <NotAuthorized>
+                <div class="flex justify-center items-center h-full">
+                    <p>Please wait, redirecting to login...</p>
+                </div>
+            </NotAuthorized>
+        </AuthorizeView>
+    </div>
+</div>
+
+@code {
+    private bool _isLoading = true;
+    private Application? CurrentApplication { get; set; }
+    private IDisposable? navigationSubscription;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        if (authState.User.Identity?.IsAuthenticated != true)
+        {
+            NavigationManager.NavigateTo($"/login?returnUrl={Uri.EscapeDataString(NavigationManager.Uri)}", true);
+            return;
+        }
+
+        navigationSubscription = NavigationManager.RegisterLocationChangingHandler(OnLocationChanging);
+        _isLoading = false;
+    }
+
+    private ValueTask OnLocationChanging(LocationChangingContext context) => ValueTask.CompletedTask;
+
+    public void Dispose() => navigationSubscription?.Dispose();
+
+    public void LoadApplication(Application application)
+    {
+        CurrentApplication = application;
+        StateHasChanged();
+    }
+}

@@ -1,0 +1,22 @@
+﻿@using Microsoft.AspNetCore.Components.Web
+
+<ErrorBoundary @ref="_errorBoundary">
+    <ChildContent>
+        @ChildContent
+    </ChildContent>
+    <ErrorContent Context="exception">
+        <Error />
+    </ErrorContent>
+</ErrorBoundary>
+
+@code {
+    private ErrorBoundary? _errorBoundary;
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    public void Recover()
+    {
+        _errorBoundary?.Recover();
+    }
+}
